@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
-use App\Models\Record;
 use Exception;
 use App\Models\Import;
+use App\Models\Record;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ImportController extends Controller
@@ -43,16 +43,21 @@ class ImportController extends Controller
                 foreach ($records as $record) {
                     try {
                         $record->import_id = $importModel->id;
+                        Record::disableAiControllerProcessing();
                         $record->save();
+                        Record::enableAiControllerProcessing();
                     } catch (Exception $e) {
                         foreach ($records as $record) {
                             $record->forceDelete();
                         }
                         $importModel->forceDelete();
-                        print_r($e->getMessage());
-                        exit;
                         return response()->json(['error' => 'Error to save records, check file and try again'], 500);
                     }
+                }
+                try {
+                    AiController::trainModel();
+                } catch (Exception $e) {
+                    
                 }
                 return response()->json(['message' => 'File uploaded successfully']);
             }

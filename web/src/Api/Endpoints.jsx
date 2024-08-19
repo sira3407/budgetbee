@@ -304,6 +304,10 @@ const Endpoints = {
     deleteBudget: async (id) => {
         return del(`budget/${id}`);
     },
+
+    predictCategory: async (text) => {
+        return post('ai/predict-category', {name: text})
+    }
 }
 
 export default Endpoints;

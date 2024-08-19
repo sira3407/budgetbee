@@ -30,6 +30,8 @@ class Record extends Model
 
     protected $hidden = ['category', 'account', 'toAccount', 'import'];
 
+    protected static $disableAiControllerProcessing = false;
+
     public static function boot()
     {
         parent::boot();
@@ -37,11 +39,9 @@ class Record extends Model
         static::created(function ($record) {
             Cache::clear();
 
-            // AiController::trainModel($record);
-            $category = AiController::predictCategory($record);
-            $record->fill([
-                'category_id' => $category->id
-            ])->save();
+            if (!static::$disableAiControllerProcessing) {
+                AiController::trainModelWithRecord($record);
+            }
 
             if ($record->type === 'transfer') {
                 static::withoutEvents(function () use ($record) {
@@ -80,9 +80,14 @@ class Record extends Model
                 });
             }
         });
-
+        
         static::updating(function ($record) {
             Cache::clear();
+
+            if (!static::$disableAiControllerProcessing) {
+                AiController::trainModelWithRecord($record);
+            }
+
             if ($record->type === 'transfer' || (!empty($record->original['type']) && $record->original['type'] === 'transfer')) {
                 static::withoutEvents(function () use ($record) {
                     $recordAssoc = ($record->link_record_id) ? Record::withTrashed()->find($record->link_record_id) : new Record();
@@ -115,8 +120,6 @@ class Record extends Model
                     }
                 });
             }
-
-            // AiController::trainModel($record);
         });
     }
 
@@ -218,5 +221,15 @@ class Record extends Model
         }
 
         return $query;
+    }
+
+    public static function disableAiControllerProcessing()
+    {
+        static::$disableAiControllerProcessing = true;
+    }
+
+    public static function enableAiControllerProcessing()
+    {
+        static::$disableAiControllerProcessing = false;
     }
 }

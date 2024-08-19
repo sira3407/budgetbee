@@ -66,6 +66,25 @@ export default function FormModal({ isOpen, onOpenChange, record_id, fetchAgain,
         }
     }, [parentCategory]);
 
+    const handleConceptChange = (e) => {
+        const value = e.target.value;
+        setName(value);
+    
+        // Clear the previous timeout if it exists
+        if (debounceTimeout.current) {
+            clearTimeout(debounceTimeout.current);
+        }
+    
+        // Set a new timeout to call the API after 1 second
+        debounceTimeout.current = setTimeout(async () => {
+            const predict = await Api.predictCategory(value);
+            setCategory(predict.category);
+            setParentCategory(predict.parent_category);
+        }, 1000);
+    };
+
+    const debounceTimeout = useRef(null);
+
     const handleSaveForm = async (e) => {
         e.preventDefault();
 
@@ -154,6 +173,15 @@ export default function FormModal({ isOpen, onOpenChange, record_id, fetchAgain,
                                     </Select>
                                 )}
                             </div>
+                            <Textarea
+                                label="Description"
+                                name="name"
+                                labelPlacement="outside"
+                                placeholder="Enter your description"
+                                className="w-full"
+                                value={name}
+                                onChange={handleConceptChange}
+                            />
                             {type !== "transfer" && (
                                 <div className="flex flex-row gap-x-3">
                                     <Select
@@ -212,15 +240,6 @@ export default function FormModal({ isOpen, onOpenChange, record_id, fetchAgain,
                                     </Select>
                                 </div>
                             )}
-                            <Textarea
-                                label="Description"
-                                name="name"
-                                labelPlacement="outside"
-                                placeholder="Enter your description"
-                                className="w-full"
-                                value={name}
-                                onChange={e => setName(e.target.value)}
-                            />
                             {type === "transfer" && (
                                 <Input
                                     isRequired

@@ -81,7 +81,7 @@ class AiController extends Controller
 
         return response()->json([
             'category' => $category->id,
-            'parent_category' => $category->parent_id
+            'parent_category' => $category->parent_category_id
         ]);
     }
 }
