@@ -11,6 +11,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\RecordController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AiController;
 
 
 /*
@@ -96,3 +97,9 @@ Route::prefix('budget')->middleware('auth:sanctum')->group(function () {
     Route::post('{id}', [BudgetController::class, 'update']);
     Route::delete('{id}', [BudgetController::class, 'delete']);
 });
+
+
+Route::prefix('ai')->middleware('auth:sanctum')->group(function () {
+    Route::post('/predict-category', [AiController::class, 'predictCategoryRequest']);
+});
+

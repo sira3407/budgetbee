@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
-use App\Models\Record;
 use Exception;
 use App\Models\Import;
+use App\Models\Record;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ImportController extends Controller
@@ -43,16 +43,20 @@ class ImportController extends Controller
                 foreach ($records as $record) {
                     try {
                         $record->import_id = $importModel->id;
+                        Record::disableAiControllerProcessing();
                         $record->save();
+                        Record::enableAiControllerProcessing();
                     } catch (Exception $e) {
                         foreach ($records as $record) {
                             $record->forceDelete();
                         }
                         $importModel->forceDelete();
-                        print_r($e->getMessage());
-                        exit;
                         return response()->json(['error' => 'Error to save records, check file and try again'], 500);
                     }
+                }
+                try {
+                    AiController::trainModel();
+                } catch (Exception $e) {
                 }
                 return response()->json(['message' => 'File uploaded successfully']);
             }
@@ -69,19 +73,22 @@ class ImportController extends Controller
         $records = [];
 
         foreach ($jsonData as $row) {
-
             try {
                 if (
                     !array_key_exists('date', $row) ||
                     !array_key_exists('from_account_id', $row) ||
                     !array_key_exists('to_account_id', $row) ||
-                    !array_key_exists('category_id', $row) ||
                     !array_key_exists('name', $row) ||
                     !array_key_exists('type', $row) ||
                     !array_key_exists('amount', $row) ||
                     !array_key_exists('rate', $row)
                 ) {
                     throw new \InvalidArgumentException('Invalid params');
+                }
+
+                if (!array_key_exists('category_id', $row) || is_null($row['category_id']) || empty($row['category_id'])) {
+                    $category = AiController::predictCategory($row['name']);
+                    $row['category_id'] = $category->id;
                 }
 
                 $row['rate'] = $row['rate'] ?? 1;
@@ -139,13 +146,12 @@ class ImportController extends Controller
                         'amount' => $worksheet->getCell([7, $row])->getValue(),
                         'rate' => $worksheet->getCell([8, $row])->getValue()
                     ]);
-    
+
                     $code = $user->id . $record->date . $record->from_account_id . $record->to_account_id . $record->category_id . $record->name . $record->type . $record->amount . $record->rate;
                     $record->code = hash('sha256', $code);
-    
+
                     $records[] = $record;
                 }
-                 
             } catch (Exception $e) {
                 return null;
             }

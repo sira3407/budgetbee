@@ -1,20 +1,26 @@
-# pull official base image
+# Use the official Node.js image as the base
 FROM node:21-slim
 
-# set working directory
+# Set the working directory inside the container
 WORKDIR /var/www/html
 
-# add app
+# Copy package.json and package-lock.json to the container
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the application code
 COPY . .
 
-# install app dependencies
-RUN rm -rf node_modules
-# COPY package.json package-lock.json ./
-RUN npm ci
+# Ensure all dependencies are built correctly
+RUN npm rebuild
 
-
-# port
+# Expose the port the app will run on
 EXPOSE 3000
 
-# start app
-CMD ["npm", "start"]
+# Build the application
+RUN npm run build
+
+# Start the app
+CMD ["npm", "run", "start"]
