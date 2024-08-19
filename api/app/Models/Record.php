@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Database\Factories\RecordFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Http\Request;
 use DateTime;
+use Illuminate\Http\Request;
 use App\Services\CurrencyConverter;
+use Database\Factories\RecordFactory;
 use Illuminate\Support\Facades\Cache;
+use App\Http\Controllers\AiController;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Record extends Model
 {
@@ -35,6 +36,13 @@ class Record extends Model
 
         static::created(function ($record) {
             Cache::clear();
+
+            // AiController::trainModel($record);
+            $category = AiController::predictCategory($record);
+            $record->fill([
+                'category_id' => $category->id
+            ])->save();
+
             if ($record->type === 'transfer') {
                 static::withoutEvents(function () use ($record) {
                     $transfercategory = 1;
@@ -58,6 +66,7 @@ class Record extends Model
                     ])->save();
                 });
             }
+
         });
 
         static::deleting(function ($record) {
@@ -74,11 +83,11 @@ class Record extends Model
 
         static::updating(function ($record) {
             Cache::clear();
-            if ($record->type === 'transfer' || $record->original['type'] === 'transfer') {
+            if ($record->type === 'transfer' || (!empty($record->original['type']) && $record->original['type'] === 'transfer')) {
                 static::withoutEvents(function () use ($record) {
                     $recordAssoc = ($record->link_record_id) ? Record::withTrashed()->find($record->link_record_id) : new Record();
                     if ($recordAssoc) {
-                        if ($record->original['type'] === 'transfer' && $record->type !== 'transfer') {
+                        if (!empty($record->original['type']) && $record->original['type'] === 'transfer' && $record->type !== 'transfer') {
                             $recordAssoc->delete();
                         } else {
                             $transfercategory = 1;
@@ -106,6 +115,8 @@ class Record extends Model
                     }
                 });
             }
+
+            // AiController::trainModel($record);
         });
     }
 
