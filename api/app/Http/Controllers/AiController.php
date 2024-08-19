@@ -33,6 +33,10 @@ class AiController extends Controller
     public static function trainModelWithRecord(Record $record)
     {
 
+        if (!file_exists(storage_path('app/ai/models/category_predictor.pkl'))) {
+            self::trainModel();
+        }
+
         $data = json_encode([[
             'name' => $record->name,
             'category_id' => $record->category_id
@@ -47,10 +51,10 @@ class AiController extends Controller
         }
     }
 
-    public static function predictCategory(Record $record)
+    public static function predictCategory(string $name)
     {
         $data = json_encode([[
-            'name' => $record->name
+            'name' => $name
         ]]);
 
         $process = new Process(['python3', '/var/www/html/app/Ai/train_and_predict.py', 'predict', $data]);
@@ -75,9 +79,8 @@ class AiController extends Controller
     public function predictCategoryRequest(Request $request)
     {
         $name = $request->get('name');
-        $fakeRecord = new Record(['name' => $name]);
 
-        $category = $this->predictCategory($fakeRecord);
+        $category = $this->predictCategory($name);
 
         return response()->json([
             'category' => $category->id,
