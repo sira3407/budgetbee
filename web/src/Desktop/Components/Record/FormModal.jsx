@@ -77,12 +77,10 @@ export default function FormModal({ isOpen, onOpenChange, record_id, fetchAgain,
     
         // Set a new timeout to call the API after 1 second
         debounceTimeout.current = setTimeout(async () => {
-            setLoading(true);
             const predict = await Api.predictCategory(value);
             setCategory(predict.category);
             setParentCategory(predict.parent_category);
-            setLoading(false);
-        }, 500);
+        }, 1000);
     };
 
     const debounceTimeout = useRef(null);
@@ -190,7 +188,6 @@ export default function FormModal({ isOpen, onOpenChange, record_id, fetchAgain,
                                         className="max-w-xs"
                                         label="Category"
                                         name="parent_category_id"
-                                        isLoading={loading}
                                         isRequired
                                         selectedKeys={[parentCategory?.toString()]}
                                         onChange={e => setParentCategory(e.target.value)}
@@ -218,7 +215,6 @@ export default function FormModal({ isOpen, onOpenChange, record_id, fetchAgain,
                                         className="max-w-xs"
                                         label="Sub category"
                                         name="category_id"
-                                        isLoading={loading}
                                         isRequired
                                         selectedKeys={[category?.toString()]}
                                         onChange={e => setCategory(e.target.value)}

@@ -7,7 +7,6 @@ import {
     faMoneyCheck,
     faBars,
     faGear,
-    faRobot,
     faSackDollar
 } from "@fortawesome/free-solid-svg-icons";
 import Api from "../../Api/Endpoints";
@@ -65,12 +64,12 @@ export default function LeftSidebarMenu() {
             icon: faMoneyCheck,
             color: "text-red-400",
         },
-        rules: {
-            name: "Rules",
-            href: "/rule",
-            icon: faRobot,
-            color: "text-purple-400",
-        },
+        // rules: {
+        //     name: "Rules",
+        //     href: "/rule",
+        //     icon: faRobot,
+        //     color: "text-green-400",
+        // },
         categories: {
             name: "Categories",
             href: "/category/list",
